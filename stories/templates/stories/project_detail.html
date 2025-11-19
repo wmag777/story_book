@@ -1,0 +1,199 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}{{ project.name }} - Story Visual Generator{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>{{ project.name }}</h1>
+        <p class="text-muted">Style: {{ project.style }} | Color: {{ project.color_scheme|title }}</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'story_input' project.pk %}" class="btn btn-primary">
+            <i class="bi bi-file-text"></i> Input Story
+        </a>
+        <a href="{% url 'story_viewer' project.pk %}" class="btn btn-success">
+            <i class="bi bi-book"></i> View Story
+        </a>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            <i class="bi bi-trash"></i> Delete
+        </button>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Generation Costs</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-7">
+                        <strong>Total Generations:</strong>
+                    </div>
+                    <div class="col-5 text-end">
+                        {{ project.generation_count }}
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-7">
+                        <strong>Total Cost:</strong>
+                    </div>
+                    <div class="col-5 text-end">
+                        <span class="badge bg-primary fs-6">
+                            ${{ project.total_generation_cost|floatformat:4 }}
+                        </span>
+                    </div>
+                </div>
+                {% if project.generation_count > 0 %}
+                <div class="row mt-2">
+                    <div class="col-7">
+                        <small class="text-muted">Avg per image:</small>
+                    </div>
+                    <div class="col-5 text-end">
+                        <small class="text-muted">${{ project.total_generation_cost|floatformat:4 }}</small>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="mt-3">
+                    <a href="{% url 'generation_settings' %}" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-gear"></i> Manage Costs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Style Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'update_style' project.pk %}">
+                    {% csrf_token %}
+                    <div class="input-group mb-2">
+                        <select class="form-select" name="style">
+                            {% for style in styles %}
+                                <option value="{{ style }}" {% if style == project.style %}selected{% endif %}>
+                                    {{ style|title|cut:"-style" }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Update Style</button>
+                    </div>
+                </form>
+                <form method="post" action="{% url 'update_color_scheme' project.pk %}">
+                    {% csrf_token %}
+                    <div class="input-group">
+                        <select class="form-select" name="color_scheme">
+                            {% for color_scheme in color_schemes %}
+                                <option value="{{ color_scheme }}" {% if color_scheme == project.color_scheme %}selected{% endif %}>
+                                    {{ color_scheme|title|cut:"-" }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary">Update Color Scheme</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Characters ({{ characters.count }})</h5>
+                <div>
+                    <a href="{% url 'character_add' project.pk %}" class="btn btn-sm btn-secondary">
+                        <i class="bi bi-plus"></i> Add
+                    </a>
+                    <a href="{% url 'character_generate' project.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-magic"></i> Generate
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                {% for character in characters %}
+                    <div class="mb-3 p-2 border rounded character-card">
+                        <div class="d-flex justify-content-between align-items-start">
+                            {% if character.reference_image %}
+                                <img src="{{ character.reference_image.url }}" class="img-thumbnail me-2" style="width: 60px; height: 60px; object-fit: cover;" alt="{{ character.name }}">
+                            {% elif character.generated_image %}
+                                <img src="{{ character.generated_image.url }}" class="img-thumbnail me-2" style="width: 60px; height: 60px; object-fit: cover;" alt="{{ character.name }}">
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <strong>{{ character.name }}</strong>
+                                <span class="badge bg-secondary ms-1">{{ "{" }}{{ character.name }}{{ "}" }}</span>
+                                <p class="text-muted small mb-0 mt-1">{{ character.description }}</p>
+                            </div>
+                            <a href="{% url 'character_edit' project.pk character.pk %}" class="btn btn-sm btn-outline-primary ms-2">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">No characters yet.</p>
+                    <a href="{% url 'character_add' project.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add Character
+                    </a>
+                    <a href="{% url 'character_generate' project.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-magic"></i> Generate Character
+                    </a>
+                    <p class="text-muted mt-2">Or <a href="{% url 'story_input' project.pk %}">input a story</a> to extract characters automatically.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Scenes ({{ scenes.count }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for scene in scenes %}
+                        <a href="{% url 'scene_manager' project.pk scene.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ scene.name }}</h6>
+                                {% if scene.approved_image %}
+                                    <span class="badge bg-success">Has Image</span>
+                                {% else %}
+                                    <span class="badge bg-warning">No Image</span>
+                                {% endif %}
+                            </div>
+                            <p class="mb-1 text-truncate">{{ scene.prompt }}</p>
+                        </a>
+                    {% empty %}
+                        <p class="text-muted">No scenes yet. Input a story to extract scenes.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete the project "{{ project.name }}"? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'project_delete' project.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

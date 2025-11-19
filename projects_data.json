@@ -1,0 +1,131 @@
+{
+    "projects": {
+        "test": {
+            "characters": {
+                "Lily": "A curious little girl with brown hair, wearing a yellow dress.",
+                "Q-Bot": "A smiling robot with a metallic body and glowing blue eyes.",
+                "Qubits": "Tiny dancing creatures, changing colors and states in the blink of an eye.",
+                "Quanta": "A magical cat with fluffy fur, twinkling eyes, and secret magical powers.",
+                "Ali": "An excited boy, with brown hair, wearing a green t-shirt and blue shorts.",
+                "Sarah": "A concerned girl, with blonde hair, wearing a pink dress and white shoes.",
+                "Sam": "A giggly boy, with curly hair, wearing a yellow t-shirt and red sneakers.",
+                "Mr. Felix": "An elderly jeweler with glasses, known for his prized Shimmering Gem.",
+                "Ms. Nova": "The wise Mayor of Quantumville, knowledgeable about quantum physics."
+            },
+            "scenes": [
+                {
+                    "name": "Scene 1",
+                    "prompt": "{Lily} discovering the shimmering gate in the park.",
+                    "approved_image": "images\\test_Scene 1.png"
+                },
+                {
+                    "name": "Scene 2",
+                    "prompt": "The gate swinging open to reveal the Magical Quantum Playground filled with twinkling lights, floating bubbles, and colorful equipment.",
+                    "approved_image": "images\\test_Scene 2.png"
+                },
+                {
+                    "name": "Scene 3",
+                    "prompt": "{Lily} meeting {Q-Bot}, the smiling robot guide.",
+                    "approved_image": "images\\test_Scene 3.png"
+                },
+                {
+                    "name": "Scene 4",
+                    "prompt": "{Lily} riding the Superposition Spinner and seeing multiple versions of herself.",
+                    "approved_image": "images\\test_Scene 4.webp"
+                },
+                {
+                    "name": "Scene 5",
+                    "prompt": "Children playing on the Entanglement Encoder seesaw and moving in sync without pushing.",
+                    "approved_image": "images\\test_Scene 5.png"
+                },
+                {
+                    "name": "Scene 6",
+                    "prompt": "{Lily} sliding down the Quantum Tunnel slide that goes in all directions.",
+                    "approved_image": "images\\test_Scene 6.png"
+                },
+                {
+                    "name": "Scene 7",
+                    "prompt": "{Qubits} dancing around the playground, changing colors and states.",
+                    "approved_image": "images\\test_Scene 7.png"
+                },
+                {
+                    "name": "Scene 8",
+                    "prompt": "{Lily} playing in the giant sandbox called the Quantum Computer, with glittering, color-changing sand.",
+                    "approved_image": "images\\test_Scene 8.png"
+                },
+                {
+                    "name": "Scene 9",
+                    "prompt": "{Lily} hugging {Q-Bot} goodbye as the day ends.",
+                    "approved_image": "images\\test_Scene 9.png"
+                }
+            ],
+            "style": "Game-RPG-Style"
+        },
+        "Quanta Test": {
+            "characters": {
+                "Quanta": "A fluffy cat with magical powers, often seen with a curious twinkle in her eye.",
+                "Ali": "An adventurous boy with brown hair, wearing a green shirt and khaki shorts.",
+                "Sarah": "A thoughtful girl with long blond hair, wearing a yellow dress and a blue bow.",
+                "Sam": "A cheerful boy with curly red hair, wearing a blue t-shirt and denim overalls."
+            },
+            "scenes": [
+                {
+                    "name": "Scene 1",
+                    "prompt": "{Quanta} meeting {Ali}, {Sarah}, and {Sam} at the playground, with {Quanta} performing the magic jump.",
+                    "approved_image": "images\\Quanta Test_Scene 1.png"
+                },
+                {
+                    "name": "Scene 2",
+                    "prompt": "Mr. Felix putting up posters about the missing Shimmering Gem, with {Ali}, {Sarah}, {Sam}, and {Quanta} seeing one of the posters.",
+                    "approved_image": "images\\Quanta Test_Scene 2.webp"
+                },
+                {
+                    "name": "Scene 3",
+                    "prompt": "{Quanta} finding the first clue, a small glittering piece of the gem, near the old oak tree in the town park.",
+                    "approved_image": "images\\Quanta Test_Scene 3.webp"
+                },
+                {
+                    "name": "Scene 4",
+                    "prompt": "The children and {Quanta} entering the Whispering Woods, with the trees' shimmering leaves glowing in unison.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 5",
+                    "prompt": "{Quanta} solving the changing puzzle on the lily pad in the hidden pond, revealing a map to an old, abandoned house.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 6",
+                    "prompt": "The children and {Quanta} exploring the old house and discovering the hidden door behind the bookshelf, leading to a room full of mirrors.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 7",
+                    "prompt": "{Quanta} pointing out the faint map reflected in the mirror, leading to the next clue.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 8",
+                    "prompt": "The children finding the Shimmering Gem under a rock beside a sparkling stream in a secluded part of Quantumville.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 9",
+                    "prompt": "The children placing the Shimmering Gem on the pedestal in the hidden room, with the room lighting up and reflecting scenes of their adventure.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 10",
+                    "prompt": "The celebration in Quantumville's town square, with the Shimmering Gem displayed and the Mayor praising the children's bravery.",
+                    "approved_image": null
+                },
+                {
+                    "name": "Scene 11",
+                    "prompt": "{Quanta} sharing fun facts about the quantum world with the children as the stars twinkle in the Quantumville sky.",
+                    "approved_image": null
+                }
+            ],
+            "style": "Ghibli-style"
+        }
+    }
+}

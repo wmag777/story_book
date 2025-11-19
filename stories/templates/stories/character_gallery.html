@@ -1,0 +1,150 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}Character Gallery - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Character Gallery</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Character Gallery</h2>
+                <a href="{% url 'character_generate' project.pk %}" class="btn btn-primary">
+                    <i class="bi bi-magic"></i> Generate New Character
+                </a>
+            </div>
+
+            {% if characters %}
+                <div class="row">
+                    {% for character in characters %}
+                        <div class="col-md-4 col-lg-3 mb-4">
+                            <div class="card h-100">
+                                {% if character.reference_image %}
+                                    <img src="{{ character.reference_image.url }}" class="card-img-top" alt="{{ character.name }}" style="height: 250px; object-fit: cover;">
+                                {% elif character.generated_image %}
+                                    <img src="{{ character.generated_image.url }}" class="card-img-top" alt="{{ character.name }}" style="height: 250px; object-fit: cover;">
+                                {% else %}
+                                    <div class="card-img-top d-flex align-items-center justify-content-center bg-light" style="height: 250px;">
+                                        <i class="bi bi-person-circle text-muted" style="font-size: 4rem;"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ character.name }}</h5>
+                                    <p class="card-text small">{{ character.description|truncatewords:20 }}</p>
+                                    <div class="d-flex justify-content-between">
+                                        <a href="{% url 'character_edit' project.pk character.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        {% if not character.generated_image and not character.reference_image %}
+                                            <button class="btn btn-sm btn-outline-success generate-btn" data-character-id="{{ character.pk }}">
+                                                <i class="bi bi-image"></i> Generate Image
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No characters created yet.
+                    <a href="{% url 'character_generate' project.pk %}" class="alert-link">Generate your first character</a> or
+                    <a href="{% url 'story_input' project.pk %}" class="alert-link">input a story</a> to extract characters automatically.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Image Generation Modal -->
+<div class="modal fade" id="quickGenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generate Character Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center" id="generatingState" style="display: none;">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Generating character image...</p>
+                </div>
+                <div id="promptState">
+                    <p>Generate an image for <strong id="characterName"></strong>?</p>
+                    <div class="mb-3">
+                        <label for="quickPrompt" class="form-label">Generation Prompt:</label>
+                        <textarea class="form-control" id="quickPrompt" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmGenerate">Generate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('quickGenerateModal'));
+    let currentCharacterId = null;
+
+    document.querySelectorAll('.generate-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentCharacterId = this.dataset.characterId;
+            const characterCard = this.closest('.card');
+            const name = characterCard.querySelector('.card-title').textContent;
+            const description = characterCard.querySelector('.card-text').textContent;
+
+            document.getElementById('characterName').textContent = name;
+            document.getElementById('quickPrompt').value = description;
+            modal.show();
+        });
+    });
+
+    document.getElementById('confirmGenerate').addEventListener('click', function() {
+        const prompt = document.getElementById('quickPrompt').value;
+        if (!prompt || !currentCharacterId) return;
+
+        // Show generating state
+        document.getElementById('promptState').style.display = 'none';
+        document.getElementById('generatingState').style.display = 'block';
+        document.getElementById('modalFooter').style.display = 'none';
+
+        // Make the API call
+        fetch(`{% url 'generate_character_image_ajax' project.pk 0 %}`.replace('0', currentCharacterId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'prompt=' + encodeURIComponent(prompt)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+                modal.hide();
+            }
+        })
+        .catch(error => {
+            alert('Error generating image: ' + error);
+            modal.hide();
+        });
+    });
+});
+</script>
+{% endblock %}

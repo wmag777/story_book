@@ -1,0 +1,55 @@
+{% extends 'stories/base.html' %}
+{% load static %}
+
+{% block title %}Input Story - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Input Story for: {{ project.name }}</h2>
+        <p class="text-muted">Enter your full story text below. The system will automatically extract characters and scenes.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card" id="formCard">
+            <div class="card-body">
+                <form method="post" id="storyExtractionForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="story_text" class="form-label">Story Text</label>
+                        <textarea class="form-control" id="story_text" name="story_text" rows="15"
+                                  placeholder="Paste or type your full story here..." required></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> The AI will:
+                        <ul class="mb-0">
+                            <li>Extract main characters with visual descriptions</li>
+                            <li>Split the story into scenes suitable for illustration</li>
+                            <li>Replace character names with placeholders for consistent generation</li>
+                        </ul>
+                    </div>
+
+                    <!-- Progress Loader (hidden by default) -->
+                    <div id="progressLoader" style="display: none;" class="text-center mb-3">
+                        <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Processing...</span>
+                        </div>
+                        <p id="progressMessage" class="text-muted">Analyzing your story...</p>
+                    </div>
+
+                    <button type="submit" id="extractBtn" class="btn btn-primary btn-lg">
+                        <i class="bi bi-magic"></i> Extract Scenes & Characters
+                    </button>
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary btn-lg">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/story_extraction.js' %}"></script>
+{% endblock %}

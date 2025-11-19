@@ -1,0 +1,316 @@
+{% extends 'stories/base.html' %}
+{% block title %}Generation Cost Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2><i class="bi bi-gear-fill"></i> Generation Cost Settings</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                <li class="breadcrumb-item active">Settings</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row mt-4">
+        <!-- API Key Configuration -->
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="bi bi-key-fill"></i> API Key Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.openai_api_key.label }}</label>
+                                <div class="input-group">
+                                    {{ form.openai_api_key }}
+                                </div>
+                                <div class="form-text">
+                                    {{ form.openai_api_key.help_text }}
+                                    <br>
+                                    <small class="text-muted">
+                                        <strong>Status:</strong>
+                                        {% if api_key_status.openai.is_set %}
+                                            <span class="text-success">✓ Configured</span>
+                                            (Source: {{ api_key_status.openai.source }})
+                                            <br>Current: {{ api_key_status.openai.masked }}
+                                        {% else %}
+                                            <span class="text-danger">✗ {{ api_key_status.openai.masked }}</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% if form.openai_api_key.errors %}
+                                    <div class="text-danger">{{ form.openai_api_key.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">{{ form.google_api_key.label }}</label>
+                                <div class="input-group">
+                                    {{ form.google_api_key }}
+                                </div>
+                                <div class="form-text">
+                                    {{ form.google_api_key.help_text }}
+                                    <br>
+                                    <small class="text-muted">
+                                        <strong>Status:</strong>
+                                        {% if api_key_status.google.is_set %}
+                                            <span class="text-success">✓ Configured</span>
+                                            (Source: {{ api_key_status.google.source }})
+                                            <br>Current: {{ api_key_status.google.masked }}
+                                        {% else %}
+                                            <span class="text-danger">✗ {{ api_key_status.google.masked }}</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% if form.google_api_key.errors %}
+                                    <div class="text-danger">{{ form.google_api_key.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Security Note:</strong> API keys stored in the database will override environment variables.
+                        Leave fields empty to use environment variables. API keys are stored securely and never displayed in full.
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Cost Configuration Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Cost Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.cost_per_generation.label }}</label>
+                        {{ form.cost_per_generation }}
+                        <div class="form-text">{{ form.cost_per_generation.help_text }}</div>
+                        {% if form.cost_per_generation.errors %}
+                            <div class="text-danger">{{ form.cost_per_generation.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.cost_per_edit.label }}</label>
+                        {{ form.cost_per_edit }}
+                        <div class="form-text">{{ form.cost_per_edit.help_text }}</div>
+                        {% if form.cost_per_edit.errors %}
+                            <div class="text-danger">{{ form.cost_per_edit.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ form.currency.label }}</label>
+                        {{ form.currency }}
+                        <div class="form-text">{{ form.currency.help_text }}</div>
+                        {% if form.currency.errors %}
+                            <div class="text-danger">{{ form.currency.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.is_tracking_enabled }}
+                            <label class="form-check-label" for="{{ form.is_tracking_enabled.id_for_label }}">
+                                {{ form.is_tracking_enabled.label }}
+                            </label>
+                            <div class="form-text">{{ form.is_tracking_enabled.help_text }}</div>
+                        </div>
+                        {% if form.is_tracking_enabled.errors %}
+                            <div class="text-danger">{{ form.is_tracking_enabled.errors }}</div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save All Settings
+                    </button>
+                <div class="mt-3">
+                    <small class="text-muted">Last updated: {{ settings.updated_at|date:"Y-m-d H:i" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cost Summary -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Cost Summary</h5>
+            </div>
+            <div class="card-body">
+                <h6>Total Costs Across All Projects</h6>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Total Generations:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ total_costs.total_count|default:0 }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <strong>Total Cost:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-success fs-6">
+                            {{ currency_symbol }}{{ total_costs.total_cost|default:0|floatformat:4 }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if cost_by_type %}
+                <h6 class="mt-4">Cost by Generation Type</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Count</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for type_cost in cost_by_type %}
+                        <tr>
+                            <td>
+                                {% if type_cost.generation_type == 'new' %}
+                                    <span class="badge bg-primary">New</span>
+                                {% elif type_cost.generation_type == 'edit' %}
+                                    <span class="badge bg-warning">Edit</span>
+                                {% else %}
+                                    <span class="badge bg-info">Character</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ type_cost.count }}</td>
+                            <td>{{ currency_symbol }}{{ type_cost.total|floatformat:4 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+</form>
+
+<!-- Top Projects by Cost -->
+{% if top_projects %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-trophy-fill"></i> Top Projects by Cost</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Generations</th>
+                            <th>Total Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in top_projects %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'project_detail' project.pk %}">
+                                    {{ project.name }}
+                                </a>
+                            </td>
+                            <td>{{ project.generation_count }}</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    {{ currency_symbol }}{{ project.total_generation_cost|floatformat:4 }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Generation History -->
+{% if recent_generations %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Generation History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Project</th>
+                                <th>Type</th>
+                                <th>Scene/Character</th>
+                                <th>Cost</th>
+                                <th>Prompt Preview</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for generation in recent_generations %}
+                            <tr>
+                                <td>{{ generation.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'project_detail' generation.project.pk %}">
+                                        {{ generation.project.name|truncatechars:20 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if generation.generation_type == 'new' %}
+                                        <span class="badge bg-primary">New</span>
+                                    {% elif generation.generation_type == 'edit' %}
+                                        <span class="badge bg-warning">Edit</span>
+                                    {% else %}
+                                        <span class="badge bg-info">Character</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if generation.scene %}
+                                        Scene: {{ generation.scene.name|truncatechars:20 }}
+                                    {% elif generation.character %}
+                                        Char: {{ generation.character.name }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ currency_symbol }}{{ generation.cost|floatformat:4 }}</td>
+                                <td>
+                                    {% if generation.prompt_preview %}
+                                        <small class="text-muted">{{ generation.prompt_preview|truncatechars:50 }}</small>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

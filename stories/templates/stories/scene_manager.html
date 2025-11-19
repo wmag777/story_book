@@ -1,0 +1,451 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}{{ scene.name }} - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+                <li class="breadcrumb-item active">{{ scene.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Scene Prompt</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="sceneForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="prompt" class="form-label">Scene Prompt with Placeholders</label>
+                        <textarea class="form-control" name="prompt" id="prompt" rows="6">{{ scene.prompt }}</textarea>
+                        <small class="text-muted">Character placeholders:
+                            {% for char in characters %}
+                                <code>{{ "{" }}{{ char.name }}{{ "}" }}</code>{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </small>
+                    </div>
+
+                    <!-- Character Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Characters in Scene</label>
+                        <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                            {% if characters %}
+                                {% for character in characters %}
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input" type="checkbox" name="characters"
+                                               value="{{ character.id }}" id="char_{{ character.id }}"
+                                               {% if character in selected_characters %}checked{% endif %}>
+                                        <label class="form-check-label" for="char_{{ character.id }}">
+                                            {% if character.reference_image %}
+                                                <img src="{{ character.reference_image.url }}"
+                                                     class="img-thumbnail me-1"
+                                                     style="width: 25px; height: 25px; object-fit: cover;"
+                                                     alt="{{ character.name }}">
+                                            {% elif character.generated_image %}
+                                                <img src="{{ character.generated_image.url }}"
+                                                     class="img-thumbnail me-1"
+                                                     style="width: 25px; height: 25px; object-fit: cover;"
+                                                     alt="{{ character.name }}">
+                                            {% endif %}
+                                            <strong>{{ character.name }}</strong>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                                <small class="text-info d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> Selected characters' images will be used as references
+                                </small>
+                            {% else %}
+                                <p class="text-muted mb-0">No characters available.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Generation Prompt -->
+                    <div class="mb-3" id="generationPromptDiv">
+                        <label for="final_prompt" class="form-label">Final Prompt for Generation (EXACT API PROMPT)</label>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" name="use_custom_prompt" id="use_custom_prompt"
+                                   {% if scene.use_custom_prompt %}checked{% endif %} onchange="toggleCustomPrompt()">
+                            <label class="form-check-label" for="use_custom_prompt">
+                                Use custom final prompt (overrides automatic generation)
+                            </label>
+                        </div>
+                        <textarea class="form-control" name="final_prompt" id="final_prompt" rows="8"
+                                  placeholder="This will be auto-generated from the scene prompt above unless custom prompt is enabled">{% if scene.final_prompt %}{{ scene.final_prompt }}{% else %}{{ final_prompt_preview }}{% endif %}</textarea>
+
+                        <div class="alert alert-info mt-2">
+                            <strong><i class="bi bi-info-circle"></i> This is the EXACT text prompt sent to the AI:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Character placeholders have been replaced with descriptions</li>
+                                <li>Style suffix has been added
+                                    {% if style_template_status %}
+                                        <span class="text-muted small">({{ style_template_status }})</span>
+                                    {% endif %}
+                                </li>
+                                {% if reference_notes %}
+                                    <li>Reference image instructions have been added</li>
+                                {% endif %}
+                            </ul>
+
+                            {% if reference_notes %}
+                                <div class="mt-2">
+                                    <strong>Reference Images Being Passed:</strong>
+                                    <ul class="mb-0">
+                                        {% for note in reference_notes %}
+                                            <li>{{ note }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+
+                            {% if 'WARNING' in style_template_status %}
+                                <div class="mt-2 text-warning">
+                                    <strong>⚠️ Template Issue:</strong> {{ style_template_status }}
+                                    <br><small>Check your <a href="{% url 'prompt_template_list' %}" target="_blank">prompt templates</a></small>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="refreshFinalPrompt()">
+                            <i class="bi bi-arrow-clockwise"></i> Refresh Final Prompt
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Generated Image</h5>
+            </div>
+            <div class="card-body text-center">
+                <!-- Error Alert (hidden by default) -->
+                <div id="errorAlert" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <!-- Progress Loader (hidden by default) -->
+                <div id="progressLoader" style="display: none;">
+                    <div class="py-5">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-primary fw-bold" id="progressMessage">Initializing...</p>
+                        <div class="progress mx-auto" style="max-width: 300px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <p class="text-muted mt-2 small">This typically takes 20-30 seconds</p>
+                    </div>
+                </div>
+
+                <!-- Image Container -->
+                <div id="imageContainer" {% if not scene.approved_image %}style="display: none;"{% endif %}>
+                    {% if scene.approved_image %}
+                        <img src="{{ scene.approved_image.url }}" class="img-fluid rounded" alt="{{ scene.name }}">
+                        <div class="mt-3">
+                            <button type="button" id="generateBtn" class="btn btn-warning"
+                                    onclick="generateImageAsync({{ project.pk }}, {{ scene.pk }})">
+                                <i class="bi bi-arrow-clockwise"></i> Regenerate Image
+                            </button>
+                        </div>
+
+                        <!-- Edit Section (integrated under image) -->
+                        <hr class="my-4">
+                        <div class="edit-section">
+                            <h6 class="text-info mb-3"><i class="bi bi-pencil-square"></i> Edit This Image</h6>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="edit_prompt_field" rows="2"
+                                          placeholder="Describe what you want to change (e.g., Make it sunset, Add rain, Change shirt color...)">{{ scene.edit_prompt|default:'' }}</textarea>
+                                <small class="text-muted">
+                                    Examples:
+                                    <span class="badge bg-light text-dark">Make it sunset</span>
+                                    <span class="badge bg-light text-dark">Add rain</span>
+                                    <span class="badge bg-light text-dark">Change to winter</span>
+                                    <span class="badge bg-light text-dark">Add more trees</span>
+                                </small>
+                            </div>
+                            <button type="button" class="btn btn-info" id="editBtn"
+                                    onclick="editImageAsync({{ project.pk }}, {{ scene.pk }})">
+                                <i class="bi bi-magic"></i> Apply Edit
+                            </button>
+                            <small class="text-muted ms-2">
+                                Modifies the existing image
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Initial Generate Button (when no image exists) -->
+                {% if not scene.approved_image %}
+                    <div id="initialContainer" class="text-center py-5">
+                        <i class="bi bi-image" style="font-size: 4rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">No image generated yet</p>
+                        <button type="button" id="generateBtn" class="btn btn-primary btn-lg"
+                                onclick="generateImageAsync({{ project.pk }}, {{ scene.pk }})">
+                            <i class="bi bi-magic"></i> Generate Image
+                        </button>
+                        <p class="text-muted mt-2">Style: {{ project.style|title|cut:"-style" }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Character Reference Panel -->
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6>Character Reference Gallery</h6>
+            </div>
+            <div class="card-body">
+                {% if selected_characters %}
+                    <p class="text-muted small mb-2">Characters in this scene:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for character in selected_characters %}
+                            <div class="text-center">
+                                {% if character.reference_image %}
+                                    <img src="{{ character.reference_image.url }}"
+                                         class="img-thumbnail"
+                                         style="width: 80px; height: 80px; object-fit: cover;"
+                                         alt="{{ character.name }}">
+                                {% elif character.generated_image %}
+                                    <img src="{{ character.generated_image.url }}"
+                                         class="img-thumbnail"
+                                         style="width: 80px; height: 80px; object-fit: cover;"
+                                         alt="{{ character.name }}">
+                                {% else %}
+                                    <div class="img-thumbnail d-flex align-items-center justify-content-center"
+                                         style="width: 80px; height: 80px; background: #f8f9fa;">
+                                        <i class="bi bi-person text-muted"></i>
+                                    </div>
+                                {% endif %}
+                                <small class="d-block mt-1">{{ character.name }}</small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">No characters selected for this scene.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/image_generation.js' %}"></script>
+<script>
+// Store the auto-generated prompt
+const autoGeneratedPrompt = `{{ final_prompt_preview|escapejs }}`;
+
+// Function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Edit image function - completely separate from generation
+function editImageAsync(projectId, sceneId) {
+    const editBtn = document.getElementById('editBtn');
+    const editPromptField = document.getElementById('edit_prompt_field');
+    const imageContainer = document.getElementById('imageContainer');
+    const progressLoader = document.getElementById('progressLoader');
+    const progressMessage = document.getElementById('progressMessage');
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMessage = document.getElementById('errorMessage');
+
+    // Get the edit prompt
+    const editPrompt = editPromptField.value.trim();
+    if (!editPrompt) {
+        alert('Please enter edit instructions');
+        editPromptField.focus();
+        return;
+    }
+
+    // Hide error alert if visible
+    if (errorAlert) errorAlert.style.display = 'none';
+
+    // Disable button and show loader
+    editBtn.disabled = true;
+    editBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Editing...';
+    if (progressLoader) {
+        progressLoader.style.display = 'block';
+        imageContainer.style.display = 'none';
+        if (progressMessage) progressMessage.textContent = 'Applying edits to your image...';
+    }
+
+    // Make AJAX request to the edit endpoint
+    fetch(`/project/${projectId}/scene/${sceneId}/edit-ajax/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ edit_prompt: editPrompt })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Success - show the edited image
+            if (progressMessage) progressMessage.textContent = 'Image edited successfully!';
+
+            // Update image container with new image
+            setTimeout(() => {
+                if (progressLoader) progressLoader.style.display = 'none';
+                imageContainer.style.display = 'block';
+
+                // Update image element
+                let imgElement = imageContainer.querySelector('img');
+                if (imgElement) {
+                    // Force reload by adding timestamp
+                    imgElement.src = data.image_url + '?t=' + new Date().getTime();
+                }
+
+                // Re-enable button
+                editBtn.disabled = false;
+                editBtn.innerHTML = '<i class="bi bi-magic"></i> Apply Edit';
+
+                // Show success message
+                if (window.showNotification) {
+                    window.showNotification('Image edited successfully!', 'success');
+                } else {
+                    alert('Image edited successfully!');
+                }
+            }, 1000);
+
+        } else {
+            // Error occurred
+            if (progressLoader) progressLoader.style.display = 'none';
+            if (errorAlert) {
+                errorAlert.style.display = 'block';
+                if (errorMessage) errorMessage.textContent = data.message || 'An error occurred during editing.';
+            } else {
+                alert(data.message || 'An error occurred during editing.');
+            }
+            imageContainer.style.display = 'block';
+
+            // Re-enable button
+            editBtn.disabled = false;
+            editBtn.innerHTML = '<i class="bi bi-magic"></i> Apply Edit';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+
+        if (progressLoader) progressLoader.style.display = 'none';
+        if (errorAlert) {
+            errorAlert.style.display = 'block';
+            if (errorMessage) errorMessage.textContent = 'Network error. Please check your connection and try again.';
+        } else {
+            alert('Network error. Please check your connection and try again.');
+        }
+        imageContainer.style.display = 'block';
+
+        // Re-enable button
+        editBtn.disabled = false;
+        editBtn.innerHTML = '<i class="bi bi-magic"></i> Apply Edit';
+    });
+}
+
+function toggleCustomPrompt() {
+    const checkbox = document.getElementById('use_custom_prompt');
+    const finalPromptTextarea = document.getElementById('final_prompt');
+
+    if (!checkbox.checked) {
+        // If unchecked, restore the auto-generated prompt
+        finalPromptTextarea.value = autoGeneratedPrompt;
+        finalPromptTextarea.style.backgroundColor = '#f8f9fa';
+    } else {
+        // If checked, allow editing
+        finalPromptTextarea.style.backgroundColor = '#ffffff';
+        if (!finalPromptTextarea.value || finalPromptTextarea.value === autoGeneratedPrompt) {
+            // If empty or still has auto-generated content, keep it for editing
+            finalPromptTextarea.value = autoGeneratedPrompt;
+        }
+    }
+}
+
+function refreshFinalPrompt() {
+    const promptTextarea = document.getElementById('prompt');
+    const finalPromptTextarea = document.getElementById('final_prompt');
+    const useCustomCheckbox = document.getElementById('use_custom_prompt');
+
+    // Build the final prompt from the current scene prompt
+    let newPrompt = promptTextarea.value;
+
+    // Replace character placeholders (this is a simplified version)
+    {% for char in characters %}
+    newPrompt = newPrompt.replace(/\{\{\s*{{ char.name|escapejs }}\s*\}\}/gi, '{{ char.description|escapejs }}');
+    {% endfor %}
+
+    // Add style suffix from the actual template
+    // Note: This should match what's in the database template
+    // The backend will use the actual template, this is just for preview
+    {% if style_template_status and 'WARNING' not in style_template_status %}
+        // Using the template-generated suffix
+        newPrompt = '{{ final_prompt_preview|escapejs }}';
+    {% else %}
+        // Template not found - show without suffix
+        console.warn('Style template not found - refresh may not show accurate preview');
+    {% endif %}
+
+    // Update the textarea
+    finalPromptTextarea.value = newPrompt;
+
+    // Uncheck the custom prompt checkbox
+    useCustomCheckbox.checked = false;
+    finalPromptTextarea.style.backgroundColor = '#f8f9fa';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleCustomPrompt();
+
+    // Watch for changes in the scene prompt to suggest refresh
+    const promptTextarea = document.getElementById('prompt');
+    let originalPrompt = promptTextarea.value;
+
+    promptTextarea.addEventListener('input', function() {
+        if (promptTextarea.value !== originalPrompt && !document.getElementById('use_custom_prompt').checked) {
+            // Show a hint that they might want to refresh
+            const refreshBtn = document.querySelector('button[onclick="refreshFinalPrompt()"]');
+            if (refreshBtn && !refreshBtn.classList.contains('btn-warning')) {
+                refreshBtn.classList.remove('btn-secondary');
+                refreshBtn.classList.add('btn-warning');
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

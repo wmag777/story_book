@@ -1,0 +1,90 @@
+/* Custom styles for Story Visual Generator */
+
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.3rem;
+}
+
+.btn {
+    border-radius: 0.375rem;
+}
+
+.scene-section img {
+    border: 3px solid #fff;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.text-truncate {
+    max-width: 100%;
+}
+
+.badge {
+    padding: 0.35em 0.65em;
+}
+
+.alert {
+    border: none;
+}
+
+/* Loading animation */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3em;
+}
+
+/* Character cards */
+.character-card {
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.character-card:hover {
+    background: #e9ecef;
+    transform: translateX(5px);
+}
+
+/* Scene cards */
+.scene-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.scene-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Story viewer styles */
+.story-container {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive images */
+img.img-fluid {
+    max-width: 100%;
+    height: auto;
+}

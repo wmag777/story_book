@@ -1,0 +1,51 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}Projects - Story Visual Generator{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>My Story Projects</h1>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'project_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> New Project
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for project in projects %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{{ project.name }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">Style: {{ project.style }}</small><br>
+                        <small class="text-muted">Created: {{ project.created_at|date:"M d, Y" }}</small>
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <span class="badge bg-secondary">{{ project.scenes.count }} Scenes</span>
+                        <span class="badge bg-info">{{ project.characters.count }} Characters</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <a href="{% url 'story_viewer' project.pk %}" class="btn btn-sm btn-success">
+                        <i class="bi bi-book"></i> Story
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> No projects yet.
+                <a href="{% url 'project_create' %}">Create your first project!</a>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

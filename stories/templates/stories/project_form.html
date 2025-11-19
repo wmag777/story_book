@@ -1,0 +1,58 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}New Project - Story Visual Generator{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3>Create New Project</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">Project Name</label>
+                        <input type="text" class="form-control" id="id_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_style" class="form-label">Art Style</label>
+                        <select class="form-select" id="id_style" name="style">
+                            <option value="Ghibli-style">Ghibli Style</option>
+                            <option value="line-art-style">Line Art Style</option>
+                            <option value="pixel-art-style">Pixel Art Style</option>
+                            <option value="water-color-style">Water Color Style</option>
+                            <option value="Fairy-Tale-style">Fairy Tale Style</option>
+                            <option value="Game-RPG-Style">Game RPG Style</option>
+                            <option value="Game-Zelda-Style">Game Zelda Style</option>
+                            <option value="Manga-style">Manga Style</option>
+                            <option value="Pixar-3d-style">Pixar 3D Style</option>
+                            <option value="Anime-style">Anime Style</option>
+                            <option value="Watercolor-style">Watercolor Style</option>
+                            <option value="Cinematic-style">Cinematic Style</option>
+                            <option value="wimpy-kid-style">Wimpy Kid Style</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_color_scheme" class="form-label">Color Scheme</label>
+                        <select class="form-select" id="id_color_scheme" name="color_scheme">
+                            <option value="colored">Colored</option>
+                            <option value="black-and-white">Black and White</option>
+                            <option value="grayscale">Grayscale</option>
+                            <option value="sepia">Sepia</option>
+                            <option value="monochrome">Monochrome</option>
+                            <option value="vibrant">Vibrant</option>
+                            <option value="pastel">Pastel</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Create Project
+                    </button>
+                    <a href="{% url 'project_list' %}" class="btn btn-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,297 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}Edit Character - {{ character.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+                <li class="breadcrumb-item active">Edit {{ character.name }}</li>
+            </ol>
+        </nav>
+        <h2>Edit Character</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Character Name</label>
+                        {{ form.name }}
+                        <small class="text-muted">
+                            Current placeholder in scenes: <code>{{ "{" }}{{ character.name }}{{ "}" }}</code>
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Visual Description</label>
+                        {{ form.description }}
+                        <small class="text-muted">
+                            Describe the character's appearance for image generation (max 15-20 words recommended)
+                        </small>
+                    </div>
+
+                    <!-- Character Image Section with Tabs -->
+                    <div class="mb-3">
+                        <label class="form-label">Character Image</label>
+
+                        <!-- Display current image if exists -->
+                        {% if character.generated_image or character.reference_image %}
+                        <div class="current-image mb-3">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    {% if character.reference_image %}
+                                    <img src="{{ character.reference_image.url }}" class="img-fluid rounded" alt="{{ character.name }}">
+                                    <span class="badge bg-info mt-2">Uploaded Image</span>
+                                    {% elif character.generated_image %}
+                                    <img src="{{ character.generated_image.url }}" class="img-fluid rounded" alt="{{ character.name }}">
+                                    <span class="badge bg-success mt-2">AI Generated</span>
+                                    {% endif %}
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="remove_image" name="remove_image">
+                                        <label class="form-check-label text-danger" for="remove_image">
+                                            <small>Remove current image</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Tabs for AI Generation vs Manual Upload -->
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#ai-generation-tab">
+                                    <i class="bi bi-magic"></i> AI Generation
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#manual-upload-tab">
+                                    <i class="bi bi-upload"></i> Upload Image
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content border border-top-0 p-3 rounded-bottom">
+                            <!-- AI Generation Tab -->
+                            <div class="tab-pane fade show active" id="ai-generation-tab">
+                                <label for="{{ form.generation_prompt.id_for_label }}" class="form-label">Generation Prompt</label>
+                                {{ form.generation_prompt }}
+                                <small class="text-muted">Modify to regenerate with different details</small>
+
+                                {% if character.generated_image or character.reference_image %}
+                                <button type="button" class="btn btn-sm btn-secondary mt-2" id="regenerateImageBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> Regenerate with AI
+                                </button>
+                                {% else %}
+                                <button type="button" class="btn btn-sm btn-primary mt-2" id="generateImageBtn">
+                                    <i class="bi bi-magic"></i> Generate Image
+                                </button>
+                                {% endif %}
+                            </div>
+
+                            <!-- Manual Upload Tab -->
+                            <div class="tab-pane fade" id="manual-upload-tab">
+                                <div class="mb-3">
+                                    <label for="{{ form.manual_image.id_for_label }}" class="form-label">
+                                        {{ form.manual_image.label }}
+                                    </label>
+                                    {{ form.manual_image }}
+                                    <small class="form-text text-muted">
+                                        {{ form.manual_image.help_text }}
+                                    </small>
+                                </div>
+
+                                <!-- Preview area for uploaded image -->
+                                <div id="imagePreview" class="d-none">
+                                    <p class="text-muted">Preview:</p>
+                                    <img id="previewImg" src="" class="img-thumbnail" style="max-height: 200px;">
+                                </div>
+
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>Note:</strong> Upload your own character image if you've already created one elsewhere.
+                                    Supported formats: JPG, PNG, GIF, WebP (max 10MB).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="update_placeholders"
+                                   name="update_placeholders" checked>
+                            <label class="form-check-label" for="update_placeholders">
+                                Update character placeholders in all scenes if name changes
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash"></i> Delete Character
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5>Preview</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>How this character appears in prompts:</strong></p>
+                <div class="p-3 bg-light rounded">
+                    <code>{{ "{" }}{{ character.name }}{{ "}" }}</code> → <em>{{ character.description }}</em>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the character "<strong>{{ character.name }}</strong>"?</p>
+                <p class="text-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    This will remove the character but keep the placeholder <code>{{ "{" }}{{ character.name }}{{ "}" }}</code> in scenes.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'character_delete' project.pk character.pk %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Character</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Generation Modal -->
+<div class="modal fade" id="imageGenerationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generating Character Image</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p id="generationStatus">Creating character artwork...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generateBtn = document.getElementById('generateImageBtn');
+    const regenerateBtn = document.getElementById('regenerateImageBtn');
+    const modalElement = document.getElementById('imageGenerationModal');
+    const modal = modalElement ? new bootstrap.Modal(modalElement) : null;
+    const manualImageInput = document.getElementById('{{ form.manual_image.id_for_label }}');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+
+    // Handle image preview for manual upload
+    if (manualImageInput) {
+        manualImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    imagePreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.classList.add('d-none');
+            }
+        });
+    }
+
+    function generateImage() {
+        const promptTextarea = document.getElementById('{{ form.generation_prompt.id_for_label }}');
+        const prompt = promptTextarea ? promptTextarea.value : '';
+
+        if (!prompt) {
+            alert('Please enter a generation prompt');
+            return;
+        }
+
+        if (modal) modal.show();
+
+        fetch("{% url 'generate_character_image_ajax' project.pk character.pk %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'prompt=' + encodeURIComponent(prompt)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (modal) modal.hide();
+            if (data.status === 'success') {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            if (modal) modal.hide();
+            alert('Error generating image: ' + error);
+        });
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', generateImage);
+    }
+    if (regenerateBtn) {
+        regenerateBtn.addEventListener('click', generateImage);
+    }
+
+    // Handle remove image checkbox behavior
+    const removeImageCheckbox = document.getElementById('remove_image');
+    if (removeImageCheckbox) {
+        removeImageCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Disable image generation/upload when removing
+                if (generateBtn) generateBtn.disabled = true;
+                if (regenerateBtn) regenerateBtn.disabled = true;
+                if (manualImageInput) manualImageInput.disabled = true;
+            } else {
+                if (generateBtn) generateBtn.disabled = false;
+                if (regenerateBtn) regenerateBtn.disabled = false;
+                if (manualImageInput) manualImageInput.disabled = false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

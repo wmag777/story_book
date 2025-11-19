@@ -1,0 +1,87 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}Story Viewer - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col text-center">
+            <h1 class="display-4">{{ project.name }}</h1>
+            <p class="lead text-muted">{{ project.style|title|cut:"-style" }} Style</p>
+            <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Project
+            </a>
+        </div>
+    </div>
+
+    <div class="story-container">
+        {% for scene in scenes %}
+            <div class="scene-section mb-5 pb-5 {% if not forloop.last %}border-bottom{% endif %}">
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <h3 class="text-center mb-4">{{ scene.name }}</h3>
+
+                        {% if scene.approved_image %}
+                            <div class="text-center mb-4">
+                                <img src="{{ scene.approved_image.url }}"
+                                     class="img-fluid rounded shadow"
+                                     alt="{{ scene.name }}"
+                                     style="max-height: 600px;">
+                            </div>
+                        {% else %}
+                            <div class="text-center mb-4 p-5 bg-light rounded">
+                                <i class="bi bi-image" style="font-size: 3rem; color: #ccc;"></i>
+                                <p class="text-muted mt-2">No image generated for this scene</p>
+                                <a href="{% url 'scene_manager' project.pk scene.pk %}" class="btn btn-sm btn-outline-primary">
+                                    Generate Image
+                                </a>
+                            </div>
+                        {% endif %}
+
+                        <div class="scene-text p-4 bg-light rounded">
+                            <p class="lead">{{ scene.prompt }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-info-circle"></i> No scenes in this story yet.
+                        <a href="{% url 'story_input' project.pk %}">Add your story text to get started!</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% if scenes %}
+        <div class="row mt-5">
+            <div class="col text-center">
+                <p class="text-muted">
+                    <i class="bi bi-check-circle"></i>
+                    {{ scenes|length }} scenes •
+                    {{ scenes|dictsort:"approved_image"|length }} images generated
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .story-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .scene-section {
+        scroll-margin-top: 80px;
+    }
+    .scene-text {
+        font-family: 'Georgia', serif;
+        line-height: 1.8;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,77 @@
+
+#try using character images to generate new images (inpainting)
+
+#add seed number generation optional
+
+#test different styles for best consistency
+
+#work on optimizing prompts (mult hands, multi legs, fingers, the other styles)
+
+add character name to the prompt
+
+
+consistent lightening
+
+Colored
+black and white
+greyscale
+
+Blur, pen and ink drawing, quick doodle, scribbled, scratchy style, very rough
+
+clipart
+Line Art
+Graffiti
+Animation
+Pixel Art
+Comic Book
+Sketch
+Caricature
+3d
+storyboard style
+KidsRedmAF, Kids Book
+anthro
+picture-story book
+digital storybook illustration, textured brushwork, c0l0r, sharp focus, low detail, blurry foreground, 8k resolution
+
+
+
+Lily, A curious little girl with brown hair, wearing a long yellow dress, discovering the shimmering gate in the park, Blur, pen and ink drawing, quick doodle, scribbled, scratchy style, very rough
+A color drawing in cartoon style of 2 dimetions a donkey with eight legs and five ears walking in a meadow in the night. 
+Cartoon, gradient red, vitality, passion, basketball rack, three-point line, Chinese rural people, white tank top shorts
+
+
+
+Cartoon of ...
+
+
+background? white plain
+
+
+Akihito Yoshida - Known for his work in video game art, which often includes anime-style illustrations.
+Artgerm - Stanley Lau, known for his digital art and comic book illustrations, often featuring anime and superhero styles.
+Asaf Hanuka - An Israeli illustrator and comic book artist known for his graphic novel work.
+Disney Animation Studios - Renowned for their animation and cartoon drawing, particularly for children.
+Hayao Miyazaki - A legendary animator, director, and co-founder of Studio Ghibli, famous for his anime films.
+Lisa Frank - Known for her vibrant, colorful artwork that appeals to children.
+Makoto Shinkai - A Japanese animator, director, and manga artist known for his anime films.
+Pixar Animation Studios - Famous for their animated films and characters loved by children.
+
+
+Chalk Art
+Colored Pencil Sketch
+Cartoon Painting - Bright and lively, ideal for capturing children's attention.
+Child's Finger Painting - Playful and relatable for children, reminiscent of their own artwork.
+Anime Art - Popular among kids for its colorful and expressive characters.
+Comic Book Art - Engaging and dynamic, suitable for storytelling with visuals.
+Colored Pencil Sketch - Soft and gentle, giving a warm and inviting feel.
+Children's Book - Specifically designed for kids, ensuring it aligns with their tastes and interests.
+Coloring Book - Interactive, allowing children to color in the illustrations themselves.
+Studio Ghibli Style - Known for its beautiful, detailed, and whimsical animation, loved by children.
+
+
+
+
+Negative:
+
+bad art, ugly, deformed, watermark, duplicated,
+text, watermark, bad art, ugly, deformed, duplicated,

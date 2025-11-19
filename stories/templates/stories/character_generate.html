@@ -1,0 +1,136 @@
+{% extends 'stories/base.html' %}
+
+{% block title %}Generate Character - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+                    <li class="breadcrumb-item active">Generate Character</li>
+                </ol>
+            </nav>
+
+            <h2>Generate New Character</h2>
+            <p class="text-muted">Create a character from scratch with AI-generated artwork</p>
+
+            <form method="post" id="characterGenerateForm">
+                {% csrf_token %}
+
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Character Details</h5>
+
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Character Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" required
+                                   placeholder="e.g., Luna the Explorer">
+                            <small class="form-text text-muted">
+                                Choose a unique name for your character
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Character Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required
+                                      placeholder="e.g., a 10-year-old girl with curly red hair, wearing a blue adventure jacket and brown boots"></textarea>
+                            <small class="form-text text-muted">
+                                This description will be used as placeholder {CharacterName} in scenes
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="generation_prompt" class="form-label">Image Generation Prompt</label>
+                            <textarea class="form-control" id="generation_prompt" name="generation_prompt" rows="4"
+                                      placeholder="e.g., A cheerful 10-year-old girl with vibrant curly red hair, bright green eyes, wearing a blue adventure jacket with many pockets, brown hiking boots, and a small backpack. Full body character design, standing pose, friendly expression."></textarea>
+                            <small class="form-text text-muted">
+                                Detailed prompt for AI image generation. If left empty, the description will be used.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="generate_image" name="generate_image" checked>
+                                <label class="form-check-label" for="generate_image">
+                                    Generate character image immediately
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Style Preview -->
+                        <div class="alert alert-info">
+                            <strong>Generation Settings:</strong>
+                            <ul class="mb-0">
+                                <li>Style: <strong>{{ project.style }}</strong></li>
+                                <li>Color Scheme: <strong>{{ project.color_scheme }}</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> Generate Character
+                    </button>
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Prompt Helper Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Prompt Writing Tips</h5>
+                    <p>For best results, include these details in your generation prompt:</p>
+                    <ul>
+                        <li><strong>Age and gender:</strong> "12-year-old boy", "elderly woman", etc.</li>
+                        <li><strong>Physical features:</strong> Hair color/style, eye color, skin tone, height/build</li>
+                        <li><strong>Clothing:</strong> Specific outfit details, colors, accessories</li>
+                        <li><strong>Expression/mood:</strong> "friendly smile", "determined look", etc.</li>
+                        <li><strong>Pose:</strong> "standing confidently", "sitting cross-legged", etc.</li>
+                        <li><strong>Distinctive features:</strong> Glasses, freckles, scars, tattoos, etc.</li>
+                    </ul>
+
+                    <div class="alert alert-warning">
+                        <strong>Note:</strong> The more specific your prompt, the better consistency you'll achieve across scenes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-enhance description for generation prompt
+    const descriptionField = document.getElementById('description');
+    const promptField = document.getElementById('generation_prompt');
+
+    descriptionField.addEventListener('blur', function() {
+        if (!promptField.value && descriptionField.value) {
+            // Auto-suggest an enhanced prompt based on description
+            promptField.placeholder = `Character portrait: ${descriptionField.value}. Full body character design, clear facial features, professional character illustration.`;
+        }
+    });
+
+    // Show loading state on form submit
+    document.getElementById('characterGenerateForm').addEventListener('submit', function(e) {
+        const generateImage = document.getElementById('generate_image').checked;
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+
+        if (generateImage) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+        }
+    });
+});
+</script>
+{% endblock %}
