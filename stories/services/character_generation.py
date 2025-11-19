@@ -20,23 +20,46 @@ class CharacterGenerator(ImageGenerator):
         Returns:
             ContentFile with generated character image
         """
-        # Enhance prompt with character-specific instructions
-        enhanced_prompt = self._enhance_character_prompt(
-            prompt,
-            project_style,
-            project_color_scheme
-        )
+        if not prompt or not prompt.strip():
+            raise ValueError(
+                "Описание персонажа не может быть пустым. "
+                "Пожалуйста, добавьте описание внешности персонажа."
+            )
 
-        # Generate filename base
-        filename_base = f"character_{character_name.lower().replace(' ', '_')}"
+        if not character_name or not character_name.strip():
+            raise ValueError(
+                "Имя персонажа не может быть пустым."
+            )
 
-        # Generate the character image
-        return self.generate(enhanced_prompt, filename_base, project=project, character=character)
+        try:
+            # Enhance prompt with character-specific instructions
+            enhanced_prompt = self._enhance_character_prompt(
+                prompt,
+                project_style,
+                project_color_scheme
+            )
+
+            # Generate filename base
+            filename_base = f"character_{character_name.lower().replace(' ', '_')}"
+
+            # Generate the character image
+            return self.generate(enhanced_prompt, filename_base, project=project, character=character)
+        except ValueError as e:
+            # Re-raise ValueError (API key errors, etc) with original message
+            raise
+        except Exception as e:
+            # Wrap other exceptions with more context
+            raise Exception(
+                f"Ошибка при генерации изображения персонажа '{character_name}': {str(e)}"
+            )
 
     def _enhance_character_prompt(self, prompt, style=None, color_scheme=None):
         """
         Enhance the character prompt with style and consistency instructions.
         """
+        if not prompt:
+            raise ValueError("Prompt cannot be empty")
+
         # Base character generation instructions
         enhanced = f"Character portrait: {prompt}"
 
@@ -59,10 +82,13 @@ class CharacterGenerator(ImageGenerator):
                 enhanced += style_suffix
             except PromptTemplate.DoesNotExist:
                 # Only use hardcoded as absolute last resort
-                print("WARNING: image_style_suffix template not found, using fallback")
+                print("ВНИМАНИЕ: Шаблон 'image_style_suffix' не найден в базе данных, используется запасной вариант")
                 enhanced += f" Draw in {style} with {color_scheme} colors"
             except ValueError as e:
-                print(f"ERROR rendering style template: {e}")
+                print(f"ОШИБКА рендеринга шаблона стиля: {e}")
+                enhanced += f" Draw in {style} with {color_scheme} colors"
+            except Exception as e:
+                print(f"ОШИБКА при получении шаблона стиля: {e}")
                 enhanced += f" Draw in {style} with {color_scheme} colors"
         elif style:
             # If only style is provided without color_scheme
@@ -107,6 +133,15 @@ class CharacterGenerator(ImageGenerator):
         Returns:
             List of generated images for the reference sheet
         """
+        if not character:
+            raise ValueError("Объект персонажа не передан")
+
+        if not hasattr(character, 'description') or not character.description:
+            raise ValueError(
+                f"У персонажа '{character.name}' отсутствует описание. "
+                f"Добавьте описание персонажа перед созданием референс-листа."
+            )
+
         if poses is None:
             poses = [
                 "front view, neutral expression",
@@ -117,6 +152,7 @@ class CharacterGenerator(ImageGenerator):
 
         generated_images = []
         base_description = character.description
+        failed_poses = []
 
         for pose in poses:
             prompt = f"{base_description}, {pose}"
@@ -129,7 +165,18 @@ class CharacterGenerator(ImageGenerator):
                 )
                 generated_images.append(image)
             except Exception as e:
-                print(f"Error generating pose '{pose}': {str(e)}")
+                error_msg = f"Ошибка генерации позы '{pose}': {str(e)}"
+                print(error_msg)
+                failed_poses.append(pose)
                 continue
+
+        if failed_poses and not generated_images:
+            raise Exception(
+                f"Не удалось сгенерировать ни одного изображения. "
+                f"Проваленные позы: {', '.join(failed_poses)}"
+            )
+
+        if failed_poses:
+            print(f"ВНИМАНИЕ: Некоторые позы не были сгенерированы: {', '.join(failed_poses)}")
 
         return generated_images

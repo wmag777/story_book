@@ -16,6 +16,12 @@ class ImageGenerator:
         gen_settings = GenerationSettings.get_settings()
         self.google_api_key = gen_settings.get_google_api_key()
 
+        if not self.google_api_key:
+            raise ValueError(
+                "Google API ключ не найден. Пожалуйста, добавьте GOOGLE_API в настройках проекта или в Replit Secrets. "
+                "Без ключа генерация изображений невозможна."
+            )
+
     def get_prompt_template(self, template_type: str, **kwargs) -> str:
         """Get prompt template from database with caching.
 
@@ -118,7 +124,18 @@ class ImageGenerator:
         """
 
         # Initialize client with API key
-        client = genai.Client(api_key=self.google_api_key)
+        if not self.google_api_key:
+            raise ValueError(
+                "Google API ключ не настроен. Добавьте GOOGLE_API в настройках проекта или в Replit Secrets."
+            )
+
+        try:
+            client = genai.Client(api_key=self.google_api_key)
+        except Exception as e:
+            raise ValueError(
+                f"Ошибка инициализации Google API клиента: {str(e)}. "
+                f"Проверьте правильность API ключа."
+            )
 
         model = "gemini-2.5-flash-image-preview"
         retry_delay = 2  # seconds
@@ -225,9 +242,28 @@ class ImageGenerator:
                         retry_delay *= 2  # Exponential backoff
                         continue
 
-                # If not a 500 error or last attempt, raise exception
+                # If not a 500 error or last attempt, raise exception with Russian message
                 if attempt == max_retries - 1:
-                    raise Exception(f"Generation failed after {max_retries} retries: {error_msg}")
+                    if "quota" in error_msg.lower() or "limit" in error_msg.lower():
+                        raise Exception(
+                            f"Превышен лимит API запросов. Проверьте квоту вашего Google API ключа. "
+                            f"Детали ошибки: {error_msg}"
+                        )
+                    elif "auth" in error_msg.lower() or "permission" in error_msg.lower():
+                        raise Exception(
+                            f"Ошибка авторизации API. Проверьте правильность вашего Google API ключа. "
+                            f"Детали ошибки: {error_msg}"
+                        )
+                    elif "invalid" in error_msg.lower() and "key" in error_msg.lower():
+                        raise Exception(
+                            f"Неверный API ключ Google. Проверьте ключ в настройках проекта. "
+                            f"Детали ошибки: {error_msg}"
+                        )
+                    else:
+                        raise Exception(
+                            f"Не удалось сгенерировать изображение после {max_retries} попыток. "
+                            f"Детали ошибки: {error_msg}"
+                        )
 
         raise Exception("Image generation failed")
 
@@ -264,7 +300,19 @@ class ImageGenerator:
             ContentFile with edited image
         """
         # Initialize client
-        client = genai.Client(api_key=self.google_api_key)
+        if not self.google_api_key:
+            raise ValueError(
+                "Google API ключ не настроен. Добавьте GOOGLE_API в настройках проекта или в Replit Secrets."
+            )
+
+        try:
+            client = genai.Client(api_key=self.google_api_key)
+        except Exception as e:
+            raise ValueError(
+                f"Ошибка инициализации Google API клиента: {str(e)}. "
+                f"Проверьте правильность API ключа."
+            )
+
         model = "gemini-2.5-flash-image-preview"
         retry_delay = 2
 
@@ -349,7 +397,21 @@ class ImageGenerator:
                     continue
 
                 if attempt == max_retries - 1:
-                    raise Exception(f"Image editing failed after {max_retries} retries: {error_msg}")
+                    if "quota" in error_msg.lower() or "limit" in error_msg.lower():
+                        raise Exception(
+                            f"Превышен лимит API запросов. Проверьте квоту вашего Google API ключа. "
+                            f"Детали ошибки: {error_msg}"
+                        )
+                    elif "auth" in error_msg.lower() or "permission" in error_msg.lower():
+                        raise Exception(
+                            f"Ошибка авторизации API. Проверьте правильность вашего Google API ключа. "
+                            f"Детали ошибки: {error_msg}"
+                        )
+                    else:
+                        raise Exception(
+                            f"Не удалось отредактировать изображение после {max_retries} попыток. "
+                            f"Детали ошибки: {error_msg}"
+                        )
 
         raise Exception("Image editing failed")
 
