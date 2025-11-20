@@ -20,9 +20,14 @@ if [ ! -L /app/db.sqlite3 ]; then
     ln -sf /app/data/db.sqlite3 /app/db.sqlite3
 fi
 
-if [ ! -L /app/media ]; then
-    rm -rf /app/media
-    ln -sf /app/data/media /app/media
+# Handle media directory - only create symlink if local media doesn't exist or is empty
+if [ ! -e /app/media ] || [ -z "$(ls -A /app/media 2>/dev/null)" ]; then
+    if [ ! -L /app/media ]; then
+        rm -rf /app/media 2>/dev/null || true
+        ln -sf /app/data/media /app/media
+    fi
+else
+    echo "Local media directory exists with content, using it instead of persistent volume"
 fi
 
 # Collect static files

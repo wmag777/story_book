@@ -12,6 +12,8 @@ services:
     volumes:
       # Persistent data volume for database and media files
       - story-data:/app/data
+      # Монтируем текущую директорию (код проекта) поверх /app в контейнере
+      - .:/app
     environment:
       # Django settings
       - SECRET_KEY=${SECRET_KEY:-}

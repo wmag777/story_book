@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import json
+import os
 from decimal import Decimal
 
 
@@ -248,6 +249,27 @@ class GenerationSettings(models.Model):
         default='',
         help_text="Google Gemini API key (overrides environment variable if set)"
     )
+    artemox_api_key = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Artemox API key (overrides environment variable if set)"
+    )
+    artemox_base_url = models.CharField(
+        max_length=255,
+        blank=True,
+        default='',
+        help_text="Artemox Base URL (overrides environment variable if set)"
+    )
+    ai_provider = models.CharField(
+        max_length=20,
+        choices=[
+            ('openai', 'OpenAI'),
+            ('artemox', 'Artemox'),
+        ],
+        default='openai',
+        help_text="Select which AI provider to use for text generation"
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -285,12 +307,85 @@ class GenerationSettings(models.Model):
             return '*' * len(key)
         return '*' * (len(key) - 4) + key[-4:]
 
+    def get_artemox_api_key(self):
+        """Get Artemox API key from DB or fallback to ENV"""
+        if self.artemox_api_key:
+            return self.artemox_api_key
+        return os.getenv('ARTEMOX_API_KEY', '')
+
+    def get_artemox_base_url(self):
+        """Get Artemox Base URL from DB or fallback to ENV"""
+        if self.artemox_base_url:
+            return self.artemox_base_url
+        return os.getenv('ARTEMOX_BASE_URL', '')
+
+    def has_openai_credentials(self):
+        """Check if OpenAI credentials are available from DB or ENV."""
+        return bool(self.get_openai_api_key())
+
+    def has_artemox_credentials(self):
+        """Check if Artemox credentials are available from DB or ENV."""
+        return bool(self.get_artemox_api_key())
+
+    def get_effective_ai_provider(self):
+        """
+        Determine which provider should be used, preferring Artemox when OpenAI
+        credentials отсутствуют, но Artemox доступен.
+        """
+        openai_key = self.get_openai_api_key()
+        artemox_key = self.get_artemox_api_key()
+
+        if self.ai_provider == 'artemox':
+            if artemox_key:
+                return 'artemox'
+            if openai_key:
+                return 'openai'
+
+        if self.ai_provider == 'openai':
+            if openai_key:
+                return 'openai'
+            if artemox_key:
+                return 'artemox'
+
+        if artemox_key and not openai_key:
+            return 'artemox'
+
+        return 'openai'
+
+    def get_current_provider(self):
+        """Public helper to expose the effective provider."""
+        return self.get_effective_ai_provider()
+
+    def get_current_api_key(self):
+        """Get API key for the effective provider with env-based fallback."""
+        provider = self.get_effective_ai_provider()
+        if provider == 'artemox':
+            return self.get_artemox_api_key()
+        return self.get_openai_api_key()
+
+    def get_current_base_url(self):
+        """Get Base URL based on effective AI provider"""
+        provider = self.get_effective_ai_provider()
+        if provider == 'artemox':
+            return self.get_artemox_base_url()
+        return None
+
+    def mask_api_key(self, key):
+        """Mask API key showing only last 4 characters"""
+        if not key:
+            return ''
+        if len(key) <= 8:
+            return '*' * len(key)
+        return '*' * (len(key) - 4) + key[-4:]
+
     def get_api_key_source(self, key_type):
         """Check if API key is from DB or ENV"""
         if key_type == 'openai':
             return 'Database' if self.openai_api_key else 'Environment'
         elif key_type == 'google':
             return 'Database' if self.google_api_key else 'Environment'
+        elif key_type == 'artemox':
+            return 'Database' if self.artemox_api_key else 'Environment'
         return 'Unknown'
 
 

@@ -1045,6 +1045,7 @@ def generation_settings(request):
     # Get API key status
     openai_key = settings.get_openai_api_key()
     google_key = settings.get_google_api_key()
+    artemox_key = settings.get_artemox_api_key()
 
     api_key_status = {
         'openai': {
@@ -1056,6 +1057,11 @@ def generation_settings(request):
             'is_set': bool(google_key),
             'source': settings.get_api_key_source('google'),
             'masked': settings.mask_api_key(google_key) if google_key else 'Not configured'
+        },
+        'artemox': {
+            'is_set': bool(artemox_key),
+            'source': settings.get_api_key_source('artemox'),
+            'masked': settings.mask_api_key(artemox_key) if artemox_key else 'Not configured'
         }
     }
 
@@ -1071,7 +1077,8 @@ def generation_settings(request):
             'EUR': '€',
             'GBP': '£'
         }.get(settings.currency, '$'),
-        'api_key_status': api_key_status
+        'api_key_status': api_key_status,
+        'effective_ai_provider': settings.get_current_provider()
     }
 
     return render(request, 'stories/generation_settings.html', context)
