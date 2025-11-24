@@ -14,8 +14,9 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load .env only when it is not explicitly disabled (e.g. in Docker)
+if os.environ.get('DJANGO_SKIP_DOTENV', '').lower() not in {'1', 'true', 'yes'}:
+    load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
