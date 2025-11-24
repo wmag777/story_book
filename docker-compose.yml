@@ -10,8 +10,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      # Persistent data volume for database and media files
-      - story-data:/app/data
       # Монтируем текущую директорию (код проекта) поверх /app в контейнере
       - .:/app
     environment:
@@ -39,7 +37,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-volumes:
-  story-data:
-    name: story-generator-data

@@ -23,23 +23,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install production server dependencies
 RUN pip install --no-cache-dir gunicorn whitenoise
 
-# Copy project files
-COPY . .
-
-# Create data directory for persistent storage
+# Ensure data directories exist inside the image (will be backed by volumes)
 RUN mkdir -p /app/data /app/data/media
-
-# Copy entrypoint script and make it executable
-COPY docker-entrypoint.sh /app/docker-entrypoint.sh
-# Fix line endings and make executable
-RUN sed -i 's/\r$//' /app/docker-entrypoint.sh && \
-    chmod +x /app/docker-entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
-# Set entrypoint
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# Set entrypoint (script lives in bind-mounted project directory)
+ENTRYPOINT ["bash", "/app/docker-entrypoint.sh"]
 
 # Run gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--threads", "4", "--timeout", "120", "story_django.wsgi:application"]

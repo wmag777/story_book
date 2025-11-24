@@ -9,27 +9,6 @@ if [ -z "$SECRET_KEY" ]; then
     echo "Generated new SECRET_KEY"
 fi
 
-# Move database and media to persistent volume if not already there
-if [ ! -f /app/data/db.sqlite3 ] && [ -f /app/db.sqlite3 ]; then
-    echo "Moving database to persistent volume..."
-    mv /app/db.sqlite3 /app/data/db.sqlite3
-fi
-
-# Create symbolic links for persistent data
-if [ ! -L /app/db.sqlite3 ]; then
-    ln -sf /app/data/db.sqlite3 /app/db.sqlite3
-fi
-
-# Handle media directory - only create symlink if local media doesn't exist or is empty
-if [ ! -e /app/media ] || [ -z "$(ls -A /app/media 2>/dev/null)" ]; then
-    if [ ! -L /app/media ]; then
-        rm -rf /app/media 2>/dev/null || true
-        ln -sf /app/data/media /app/media
-    fi
-else
-    echo "Local media directory exists with content, using it instead of persistent volume"
-fi
-
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --noinput --settings=settings_docker
